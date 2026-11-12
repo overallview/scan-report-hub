@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noarchive">
+  <title>安全扫描报告库</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="brand">
+        <span class="logo">🛡️</span>
+        <div>
+          <h1 id="site-title">安全扫描报告库</h1>
+          <p class="sub-en" id="site-sub">Scan Report Hub</p>
+        </div>
+      </div>
+      <p class="desc" id="site-desc"></p>
+      <div class="stats" id="stats"></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="🔍 搜索报告名称…" autocomplete="off">
+      <div class="chips" id="chips"></div>
+    </div>
+    <div id="grid" class="grid"></div>
+    <div id="empty" class="empty" hidden>
+      <div class="big">📭</div>
+      <p>没有找到匹配的报告</p>
+    </div>
+  </main>
+
+  <footer class="wrap">
+    <p id="foot-text">
+      报告仅供在线浏览 · 点评与反馈请进入报告页面留言<br>
+      Powered by GitHub Pages
+    </p>
+  </footer>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

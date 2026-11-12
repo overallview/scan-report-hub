@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>报告阅读</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body class="report-page">
+
+  <nav class="topbar">
+    <a href="index.html">← 返回首页</a>
+    <div class="rtitle" id="r-title">加载中…</div>
+    <div class="tools">
+      <span id="page-ind"></span>
+      <button id="zoom-out" title="缩小">−</button>
+      <button id="zoom-in" title="放大">＋</button>
+      <button id="zoom-fit" title="恢复适应宽度">适应宽度</button>
+    </div>
+  </nav>
+
+  <div id="viewer">
+    <div id="loading">📄 报告加载中…</div>
+    <div id="pages"></div>
+  </div>
+
+  <section class="comments">
+    <h2>💬 点评与反馈</h2>
+    <p class="hint">评论基于 GitHub Discussions：首次发言需登录 GitHub；站长会在此回复互动。</p>
+    <div id="giscus"></div>
+  </section>
+
+  <div id="print-warn">本报告仅供在线浏览，不支持打印或导出。</div>
+
+  <script src="assets/config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="assets/viewer.js"></script>
+</body>
+</html>

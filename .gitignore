@@ -1,0 +1,7 @@
+# 本地构建产物
+_site/
+reports.json
+
+# 系统杂项
+Thumbs.db
+.DS_Store
