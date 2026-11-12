@@ -44,10 +44,11 @@ const pagesBox = $("#pages");
 const viewer = $("#viewer");
 let pdfDoc = null;
 let zoom = 1;                 // 相对"适应宽度"的倍率
+let pageW = 612, pageH = 792; // 第 1 页实际尺寸（加载后更新，用于占位与适配）
 const rendered = new Map();   // pageNo -> canvas
 
 function baseScale() {
-  return (viewer.clientWidth - 32) / pdfDoc.getPage(1).getViewport({ scale: 1 }).width;
+  return (viewer.clientWidth - 32) / pageW;
 }
 
 function makeWatermark(w) {
@@ -78,10 +79,10 @@ function layout() {
   rendered.clear();
   const io = new IntersectionObserver(
     (ents) => ents.forEach((en) => {
+      const n = +en.target.dataset.page;
       if (en.isIntersecting) {
-        const n = +en.target.dataset.page;
         if (!rendered.has(n)) renderPage(n, en.target, vw, dpr);
-        if (en.isIntersecting && en.intersectionRatio > 0.5) {
+        if (en.intersectionRatio > 0.5) {
           $("#page-ind").textContent = `${n} / ${pdfDoc.numPages}`;
         }
       }
@@ -92,21 +93,20 @@ function layout() {
     const holder = document.createElement("div");
     holder.className = "sheet";
     holder.dataset.page = i;
-    holder.style.height = Math.round(vw * 1.414) + "px"; // 先按 A4 比例占位，渲染后校正
+    holder.style.height = Math.round(vw * pageH / pageW) + "px"; // 按第 1 页比例占位
     pagesBox.append(holder);
     io.observe(holder);
   }
-  // 用第 1 页真实比例校正占位高度
-  pdfDoc.getPage(1).then((p) => {
-    const h = p.getViewport({ scale: vw }).height;
-    pagesBox.querySelectorAll(".sheet").forEach((el) => (el.style.height = h + "px"));
-  });
 }
 
 pdfjsLib
-  .getDocument({ url: encodeURI(file), disableAutoFetch: false })
-  .promise.then((doc) => {
+  .getDocument({ url: encodeURI(file) })
+  .promise.then(async (doc) => {
     pdfDoc = doc;
+    const p1 = await pdfDoc.getPage(1);
+    const vp1 = p1.getViewport({ scale: 1 });
+    pageW = vp1.width;
+    pageH = vp1.height;
     $("#loading").remove();
     layout();
   })
