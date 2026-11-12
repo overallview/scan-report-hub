@@ -33,9 +33,12 @@ a { color: var(--accent); text-decoration: none; }
   font-size: 34px;
   width: 58px; height: 58px;
   display: grid; place-items: center;
-  background: rgba(255, 255, 255, .16);
+  background: #fff;
   border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .22);
+  flex: none;
 }
+.logo img { width: 40px; height: 40px; display: block; }
 .hero h1 { margin: 0; font-size: 28px; letter-spacing: .5px; }
 .hero .sub-en { margin: 0; font-size: 13px; opacity: .75; letter-spacing: 2px; text-transform: uppercase; }
 .hero .desc { margin: 16px 0 0; opacity: .88; font-size: 15px; }
