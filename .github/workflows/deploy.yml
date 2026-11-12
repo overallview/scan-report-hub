@@ -28,15 +28,26 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Generate reports.json
+      - name: Ensure poppler (PDF -> images)
+        run: |
+          if ! command -v pdftoppm >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y poppler-utils
+          fi
+          pdftoppm -v 2>&1 | head -1
+
+      - name: Generate reports.json and page images
         run: python scripts/generate_index.py
 
       - name: Assemble site
         run: |
           mkdir -p _site
           cp index.html report.html reports.json _site/
-          cp -r assets reports _site/
+          cp -r assets _site/
+          # 只发布页面图片；原始 PDF 不对外（仅转换失败的回退文件放行）
+          [ -d site_images ] && cp -r site_images _site/
+          [ -d site_public ] && cp -r site_public _site/
           touch _site/.nojekyll
+          ls _site/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

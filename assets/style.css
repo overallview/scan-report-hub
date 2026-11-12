@@ -185,7 +185,8 @@ footer {
   box-shadow: 0 2px 12px rgba(15, 23, 42, .14);
   overflow: hidden;
 }
-#viewer canvas { display: block; }
+#viewer .sheet img { display: block; width: 100%; }
+#viewer .img-err { padding: 60px 20px; color: #dc2626; text-align: center; }
 #loading { text-align: center; color: var(--ink-2); padding: 80px 0; font-size: 14px; }
 #load-error { text-align: center; color: #dc2626; padding: 80px 20px; }
 
