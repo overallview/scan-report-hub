@@ -38,9 +38,10 @@ const viewer = $("#viewer");
 const pageInd = $("#page-ind");
 let META = null;
 let zoom = 1;
-let mode = null;          // "images" | "pdf"
+let mode = null;          // "images" | "pdf" | "image" | "link"
 let pdfDoc = null;        // pdf 模式专用
 let pageW = 612, pageH = 792;
+const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp"]);
 
 fetch("reports.json", { cache: "no-store" })
   .then((r) => r.json())
@@ -49,13 +50,18 @@ fetch("reports.json", { cache: "no-store" })
 
 function boot() {
   updateTitle();
+  const ext = META ? META.ext : (file.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
   if (META && META.pages > 0) {
     mode = "images";
     renderImages();
-  } else if ((META && META.ext === "pdf") || /\.pdf$/i.test(file)) {
+  } else if (ext === "pdf") {
     mode = "pdf";
     renderWithPdfJs();
+  } else if (IMAGE_EXTS.has(ext)) {
+    mode = "image";
+    renderSingleImage();
   } else {
+    mode = "link";
     renderLinkCard();
   }
 }
@@ -121,6 +127,24 @@ function renderImages() {
     sheet.append(img, makeWatermark(viewer.clientWidth));
     pagesBox.append(sheet);
   }
+  setupScrollIndicator();
+}
+
+/* ---------- 5b. 模式三：单张图片（jpg/png 等原样发布、内嵌展示） ---------- */
+function renderSingleImage() {
+  const loading = $("#loading");
+  if (loading) loading.remove();
+  const src = (META && META.public_path) || file;
+  const sheet = document.createElement("div");
+  sheet.className = "sheet";
+  sheet.dataset.page = 1;
+  const img = document.createElement("img");
+  img.src = encodeURI(src);
+  img.draggable = false;
+  img.alt = "图片预览";
+  img.onerror = () => { sheet.innerHTML = `<div class="img-err">⚠️ 图片加载失败</div>`; };
+  sheet.append(img, makeWatermark(viewer.clientWidth));
+  pagesBox.append(sheet);
   setupScrollIndicator();
 }
 

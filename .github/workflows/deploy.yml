@@ -35,6 +35,21 @@ jobs:
           fi
           pdftoppm -v 2>&1 | head -1
 
+      - name: Install LibreOffice (only when office files present)
+        run: |
+          if find reports -type f \( \
+              -name "*.doc"  -o -name "*.docx"  -o \
+              -name "*.xls"  -o -name "*.xlsx"  -o \
+              -name "*.ppt"  -o -name "*.pptx"  -o \
+              -name "*.odt"  -o -name "*.ods"   -o \
+              -name "*.odp"  -o -name "*.rtf" \) | grep -q .; then
+            sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+              libreoffice-writer libreoffice-calc libreoffice-impress
+            soffice --version
+          else
+            echo "no office files, skipping LibreOffice"
+          fi
+
       - name: Generate reports.json and page images
         run: python scripts/generate_index.py
 

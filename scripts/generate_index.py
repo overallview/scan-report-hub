@@ -21,6 +21,11 @@ PUBLIC_DIR = ROOT / "site_public"
 OUT = ROOT / "reports.json"
 DPI = 120  # 渲染精度：清晰度与体积的平衡
 
+# 需要 LibreOffice 先转成 PDF 的办公文档格式
+OFFICE_EXTS = {"doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "rtf"}
+# 浏览器能直接展示的图片格式
+IMAGE_EXTS = {"png", "jpg", "jpeg", "gif", "webp", "bmp"}
+
 
 def git_date(path: Path) -> str | None:
     """取文件最后一次提交时间（ISO8601），没有 git 历史时返回 None。"""
@@ -31,6 +36,32 @@ def git_date(path: Path) -> str | None:
         ).stdout.strip() or None
     except Exception:
         return None
+
+
+def publish_raw(src: Path, rel: Path) -> str:
+    """原样发布文件到 site_public/，返回网站相对路径（可下载的回退方案）。"""
+    dest = PUBLIC_DIR / rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dest)
+    return dest.relative_to(ROOT).as_posix()
+
+
+def convert_office(pdf_src: Path, tmp_dir: Path) -> Path | None:
+    """用 LibreOffice 把办公文档转成 PDF，返回 PDF 路径；失败返回 None。"""
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        r = subprocess.run(
+            ["soffice", "--headless", "--convert-to", "pdf",
+             "--outdir", tmp_dir.as_posix(), pdf_src.as_posix()],
+            capture_output=True, text=True, timeout=300,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        print(f"WARN: soffice unavailable/timeout ({e.__class__.__name__})")
+        return None
+    if r.returncode != 0:
+        return None
+    pdf = tmp_dir / (pdf_src.stem + ".pdf")
+    return pdf if pdf.exists() else None
 
 
 def convert_pdf(pdf: Path, out_dir: Path) -> int:
@@ -90,12 +121,29 @@ def main() -> int:
                     entry["pages"] = pages
                     stats["images"] += 1
                 else:  # 转换失败 → 原样发布，阅读页降级用 PDF.js 打开
-                    dest = PUBLIC_DIR / rel
-                    dest.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(p, dest)
-                    entry["public_path"] = dest.relative_to(ROOT).as_posix()
+                    entry["public_path"] = publish_raw(p, rel)
                     stats["fallback"] += 1
                     print(f"WARN: pdftoppm failed for {p.name}, publishing raw file")
+            elif entry["ext"] in OFFICE_EXTS:
+                # 办公文档：LibreOffice 转 PDF → 再转逐页图片
+                image_dir = IMAGES_DIR / rel.with_suffix("")
+                tmp_dir = ROOT / ".office_tmp" / rel.with_suffix("").as_posix().replace("/", "_")
+                pdf_tmp = convert_office(p, tmp_dir)
+                if pdf_tmp:
+                    pages = convert_pdf(pdf_tmp, image_dir)
+                    if pages > 0:
+                        entry["pages"] = pages
+                        stats["images"] += 1
+                shutil.rmtree(tmp_dir.parent if tmp_dir.parent.name == ".office_tmp" else tmp_dir, ignore_errors=True)
+                if not entry["pages"]:
+                    entry["public_path"] = publish_raw(p, rel)
+                    stats["fallback"] += 1
+                    print(f"WARN: office conversion failed for {p.name}, publishing raw file")
+            else:
+                # 图片 / 文本 / 其他格式：原样发布（图片在阅读页内嵌展示，其余新标签页打开）
+                entry["public_path"] = publish_raw(p, rel)
+                if entry["ext"] in IMAGE_EXTS:
+                    stats["images"] += 1
 
             reports.append(entry)
 
