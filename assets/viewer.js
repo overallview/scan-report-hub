@@ -32,6 +32,26 @@ function makeWatermark(w) {
   return div;
 }
 
+/* ---------- 2b. 访问计数（Abacus；失败静默） ---------- */
+const ABACUS = "https://abacus.jasoncameron.dev";
+function repKey(p) {
+  let h = 5381;
+  for (const ch of p) h = ((((h * 33) & 0xffffffff) ^ ch.codePointAt(0)) >>> 0);
+  return "r" + h.toString(16);
+}
+function countVisit() {
+  // 本报告阅读人次（首页列表显示的数字在下次构建时同步）
+  fetch(`${ABACUS}/hit/${COUNTER.namespace}/${repKey(file)}`)
+    .then((r) => r.json())
+    .then((d) => {
+      if (typeof d.value !== "number") return;
+      const el = document.getElementById("view-count");
+      if (el) el.textContent = `👁 ${d.value}`;
+    })
+    .catch(() => {});
+}
+countVisit();
+
 /* ---------- 3. 元数据与模式分发 ---------- */
 const pagesBox = $("#pages");
 const viewer = $("#viewer");

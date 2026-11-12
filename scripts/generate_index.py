@@ -27,6 +27,39 @@ REPO_OWNER = "overallview"
 REPO_NAME = "scan-report-hub"
 GISCUS_CATEGORY_ID = "DIC_kwDOVrXu3M4DK7tc"
 GENERAL_TERM = "网站整体反馈"  # 首页总体反馈对应讨论帖的标题，不出现在"各报告反馈"索引里
+ABACUS = "https://abacus.jasoncameron.dev"
+COUNTER_NS = "scan-report-hub"  # 与 assets/config.js 的 COUNTER.namespace 保持一致
+
+
+def rep_key(path: str) -> str:
+    """与 assets/viewer.js 的 repKey 完全一致的 djb2 哈希（Abacus key 仅允许 ASCII）。"""
+    h = 5381
+    for ch in path:
+        h = (((h * 33) & 0xFFFFFFFF) ^ ord(ch)) & 0xFFFFFFFF
+    return "r" + format(h, "x")
+
+
+def fetch_views(paths: list) -> dict:
+    """并发读取各报告的阅读人次；服务不可用时返回空 dict（页面自动隐藏数字）。"""
+    try:
+        from concurrent.futures import ThreadPoolExecutor
+
+        def get_one(p: str):
+            try:
+                req = urllib.request.Request(
+                    f"{ABACUS}/get/{COUNTER_NS}/{rep_key(p)}",
+                    headers={"User-Agent": "scan-report-hub-build"},
+                )
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    return p, json.load(resp).get("value")
+            except Exception:
+                return p, None
+
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            return dict(ex.map(get_one, paths))
+    except Exception as e:
+        print(f"WARN: fetch views failed: {e}")
+        return {}
 
 # 需要 LibreOffice 先转成 PDF 的办公文档格式
 OFFICE_EXTS = {"doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "rtf"}
@@ -210,6 +243,12 @@ def main() -> int:
     # 各报告的反馈索引（只保留仍存在的报告对应的讨论帖）
     known_paths = {r["path"] for r in reports}
     discussions = [d for d in fetch_discussions() if d["path"] in known_paths]
+
+    # 各报告的阅读人次（首页列表展示，构建时快照）
+    views = fetch_views(sorted(known_paths))
+    for r in reports:
+        if views.get(r["path"]) is not None:
+            r["views"] = views[r["path"]]
 
     data = {
         "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),

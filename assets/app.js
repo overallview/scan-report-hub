@@ -46,7 +46,27 @@ async function init() {
     applyFilter();
   });
 
+  countSiteVisit();
   mountGiscusHome();
+}
+
+/* ===== 访问计数（Abacus 公共计数服务；失败时自动隐藏，不影响页面） ===== */
+const ABACUS = "https://abacus.jasoncameron.dev";
+function repKey(p) {
+  let h = 5381;
+  for (const ch of p) h = ((((h * 33) & 0xffffffff) ^ ch.codePointAt(0)) >>> 0);
+  return "r" + h.toString(16);
+}
+function countSiteVisit() {
+  fetch(`${ABACUS}/hit/${COUNTER.namespace}/site-total`)
+    .then((r) => r.json())
+    .then((d) => {
+      if (typeof d.value !== "number") return;
+      const el = $("#stat-views");
+      el.hidden = false;
+      el.querySelector("b").textContent = d.value.toLocaleString();
+    })
+    .catch(() => { /* 计数服务不可用就静默隐藏 */ });
 }
 
 /* ===== 首页反馈区：各报告反馈一览 + 总体反馈评论 ===== */
@@ -129,23 +149,57 @@ function applyFilter() {
   renderGrid(list);
 }
 
+/* ===== 分类 / 报告顺序（可在 config.js 的 DISPLAY 里自定义） ===== */
+function orderedCategories() {
+  const present = [...new Set(ALL.map((r) => r.category))];
+  const pinned = DISPLAY.categoryOrder.filter((c) => present.includes(c));
+  const rest = present
+    .filter((c) => !DISPLAY.categoryOrder.includes(c))
+    .sort((a, b) => a.localeCompare(b, "zh"));
+  return [...pinned, ...rest];
+}
+
+function orderedReports(cat, list) {
+  const order = (DISPLAY.reportOrder && DISPLAY.reportOrder[cat]) || [];
+  const pinned = [];
+  const seen = new Set();
+  for (const name of order) {
+    const hit = list.find((r) => r.name === name);
+    if (hit && !seen.has(hit)) { pinned.push(hit); seen.add(hit); }
+  }
+  const rest = list.filter((r) => !seen.has(r));   // json 内已按日期新→旧
+  return [...pinned, ...rest];
+}
+
+/* ===== 列表模式：按分类分组，每份报告一行 ===== */
 function renderGrid(list) {
   const grid = $("#grid");
   $("#empty").hidden = list.length > 0;
-  grid.innerHTML = list
-    .map(
-      (r) => `
-    <a class="card" href="report.html?f=${encodeURIComponent(r.path)}">
-      <span class="cat" style="background:${catColor(r.category)}">${r.category}</span>
-      <h3>${r.name}</h3>
-      <div class="meta">
-        <span>📅 ${fmtDate(r.date)}</span>
-        ${r.size != null ? `<span>📦 ${fmtSize(r.size)}</span>` : ""}
-        <span>📄 ${r.ext.toUpperCase()}</span>
-      </div>
-      <span class="go">在线阅读 →</span>
-    </a>`
-    )
+  grid.innerHTML = orderedCategories()
+    .map((cat) => {
+      const items = orderedReports(cat, list.filter((r) => r.category === cat));
+      if (!items.length) return "";
+      return `
+      <section class="cat-group">
+        <h2 class="cat-head">${cat}<span class="cat-n">${items.length} 份报告</span></h2>
+        <ul class="rep-list">
+          ${items
+            .map(
+              (r) => `
+          <li class="rep-row">
+            <a class="rep-name" href="report.html?f=${encodeURIComponent(r.path)}" title="${r.name}">📄 ${r.name}</a>
+            <span class="rep-meta">
+              <span>📅 ${fmtDate(r.date)}</span>
+              ${r.size != null ? `<span>📦 ${fmtSize(r.size)}</span>` : ""}
+              ${r.views != null ? `<span title="截至上次构建的阅读人次">👁 ${r.views}</span>` : ""}
+            </span>
+            <a class="rep-go" href="report.html?f=${encodeURIComponent(r.path)}">阅读 →</a>
+          </li>`
+            )
+            .join("")}
+        </ul>
+      </section>`;
+    })
     .join("");
 }
 
