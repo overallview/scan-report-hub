@@ -1,8 +1,8 @@
 // ===== 站点配置：想改名、改简介，改这里即可 =====
 const SITE = {
-  title: "安全扫描报告库",
-  subtitle: "Scan Report Hub",
-  description: "在线浏览安全扫描报告 · 按分类管理 · 支持点评与反馈",
+  title: "技术扫描报告库",
+  subtitle: "Tech Scan Report Hub",
+  description: "在线浏览技术扫描报告 · 按分类管理 · 支持点评与反馈",
   owner: "overallview",
   repo: "scan-report-hub",
 };

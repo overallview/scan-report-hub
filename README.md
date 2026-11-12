@@ -1,4 +1,4 @@
-# 安全扫描报告库 · Scan Report Hub
+# 技术扫描报告库 · Tech Scan Report Hub
 
 一个纯 GitHub 方案的报告展示站：**按分类展示扫描报告 + 在线浏览（防下载）+ 基于 GitHub Discussions 的点评反馈**。
 
