@@ -5,3 +5,7 @@ reports.json
 # 系统杂项
 Thumbs.db
 .DS_Store
+
+# 构建产物（CI 每次自动重建）
+site_images/
+site_public/
