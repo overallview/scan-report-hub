@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  discussions: read
   pages: write
   id-token: write
 
@@ -51,6 +52,8 @@ jobs:
           fi
 
       - name: Generate reports.json and page images
+        env:
+          GH_TOKEN: ${{ github.token }}   # 用于查询 Discussions 生成反馈索引
         run: python scripts/generate_index.py
 
       - name: Assemble site

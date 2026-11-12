@@ -8,9 +8,11 @@
 - 记录每份报告：路径、名称、分类、大小、页数、上传日期（git 最后提交时间）
 """
 import json
+import os
 import shutil
 import subprocess
 import sys
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,6 +22,11 @@ IMAGES_DIR = ROOT / "site_images"
 PUBLIC_DIR = ROOT / "site_public"
 OUT = ROOT / "reports.json"
 DPI = 120  # 渲染精度：清晰度与体积的平衡
+
+REPO_OWNER = "overallview"
+REPO_NAME = "scan-report-hub"
+GISCUS_CATEGORY_ID = "DIC_kwDOVrXu3M4DK7tc"
+GENERAL_TERM = "网站整体反馈"  # 首页总体反馈对应讨论帖的标题，不出现在"各报告反馈"索引里
 
 # 需要 LibreOffice 先转成 PDF 的办公文档格式
 OFFICE_EXTS = {"doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "rtf"}
@@ -89,6 +96,54 @@ def convert_pdf(pdf: Path, out_dir: Path) -> int:
     return len(files)
 
 
+def fetch_discussions() -> list:
+    """查询仓库 Discussions，生成"各报告反馈"索引。
+
+    - CI 中自动注入 GITHUB_TOKEN，本地无 token 时跳过（返回空列表）
+    - giscus 的 mapping=specific 会以文件路径作为讨论帖标题，据此关联到报告
+    """
+    token = os.environ.get("GH_TOKEN", "")
+    if not token:
+        return []
+    query = """
+    query($owner:String!, $name:String!, $catID:ID!) {
+      repository(owner:$owner, name:$name) {
+        discussions(first:100, categoryId:$catID) {
+          nodes { title url comments(first:1){ totalCount } }
+        }
+      }
+    }"""
+    body = {"query": query,
+            "variables": {"owner": REPO_OWNER, "name": REPO_NAME, "catID": GISCUS_CATEGORY_ID}}
+    req = urllib.request.Request(
+        "https://api.github.com/graphql",
+        data=json.dumps(body).encode(),
+        headers={"Authorization": f"bearer {token}",
+                 "Content-Type": "application/json",
+                 "User-Agent": "scan-report-hub-build"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            payload = json.load(resp)
+        nodes = ((payload.get("data") or {}).get("repository") or {}
+                 ).get("discussions", {}).get("nodes") or []
+    except Exception as e:
+        print(f"WARN: fetch discussions failed: {e}")
+        return []
+    out = []
+    for n in nodes:
+        title = n.get("title", "")
+        if title == GENERAL_TERM:
+            continue  # 总体反馈帖单独由首页嵌入展示，不进索引
+        try:
+            out.append({"path": title,
+                        "url": n.get("url", ""),
+                        "count": n["comments"]["totalCount"]})
+        except (KeyError, TypeError):
+            continue
+    return out
+
+
 def main() -> int:
     reports = []
     stats = {"images": 0, "fallback": 0}
@@ -152,9 +207,14 @@ def main() -> int:
     for r in reports:
         categories[r["category"]] = categories.get(r["category"], 0) + 1
 
+    # 各报告的反馈索引（只保留仍存在的报告对应的讨论帖）
+    known_paths = {r["path"] for r in reports}
+    discussions = [d for d in fetch_discussions() if d["path"] in known_paths]
+
     data = {
         "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "categories": sorted(categories),
+        "discussions": discussions,
         "reports": reports,
     }
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")

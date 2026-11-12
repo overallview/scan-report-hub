@@ -36,6 +36,7 @@ async function init() {
     renderStats(data);
     renderChips(data);
     applyFilter();
+    renderFeedback(data);
   } catch (e) {
     $("#grid").innerHTML = `<div class="empty"><div class="big">⚠️</div><p>reports.json 加载失败，请确认已通过 GitHub Actions 部署</p></div>`;
   }
@@ -44,6 +45,53 @@ async function init() {
     keyword = ev.target.value.trim().toLowerCase();
     applyFilter();
   });
+
+  mountGiscusHome();
+}
+
+/* ===== 首页反馈区：各报告反馈一览 + 总体反馈评论 ===== */
+function renderFeedback(data) {
+  const box = $("#disc-index");
+  const discs = data.discussions || [];
+  if (!discs.length) {
+    box.innerHTML = `<p class="no-disc">各报告收到的点评会在这里列出（当前还没有反馈记录）。</p>`;
+  } else {
+    const nameOf = Object.fromEntries(ALL.map((r) => [r.path, r.name]));
+    box.innerHTML = discs
+      .map(
+        (d) => `
+      <div class="disc-row">
+        <span class="disc-name">📄 ${nameOf[d.path] || d.path}</span>
+        <span class="disc-count">${d.count} 条</span>
+        <a href="${d.url}" target="_blank" rel="noopener">查看反馈 →</a>
+      </div>`
+      )
+      .join("");
+  }
+  const link = $("#gh-disc-link");
+  link.href = `https://github.com/${SITE.owner}/${SITE.repo}/discussions`;
+}
+
+function mountGiscusHome() {
+  if (!GISCUS.repoId || GISCUS.repoId.startsWith("__")) return;
+  const s = document.createElement("script");
+  s.src = "https://giscus.app/client.js";
+  s.setAttribute("data-repo", GISCUS.repo);
+  s.setAttribute("data-repo-id", GISCUS.repoId);
+  s.setAttribute("data-category", GISCUS.category);
+  s.setAttribute("data-category-id", GISCUS.categoryId);
+  s.setAttribute("data-mapping", "specific");
+  s.setAttribute("data-term", "网站整体反馈");   // 首页总体反馈的固定讨论帖
+  s.setAttribute("data-strict", "1");
+  s.setAttribute("data-reactions-enabled", "1");
+  s.setAttribute("data-emit-metadata", "0");
+  s.setAttribute("data-input-position", "top");
+  s.setAttribute("data-theme", "light");
+  s.setAttribute("data-lang", "zh-CN");
+  s.setAttribute("data-loading", "lazy");
+  s.crossOrigin = "anonymous";
+  s.async = true;
+  $("#giscus-home").append(s);
 }
 
 function renderStats(data) {

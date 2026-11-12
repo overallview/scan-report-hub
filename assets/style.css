@@ -126,6 +126,42 @@ a { color: var(--accent); text-decoration: none; }
 .empty { text-align: center; color: var(--ink-2); padding: 70px 0; }
 .empty .big { font-size: 44px; margin-bottom: 8px; }
 
+/* ===== 首页反馈区 ===== */
+.feedback {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px;
+  margin: 6px 0 46px;
+}
+.feedback h2 { margin: 0 0 4px; font-size: 18px; }
+.feedback .hint { color: var(--ink-2); font-size: 13px; margin: 0 0 20px; }
+.disc-title { font-size: 14px; margin: 18px 0 10px; color: var(--ink-2); font-weight: 600; }
+.disc-index { margin-bottom: 8px; }
+.disc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  font-size: 13.5px;
+}
+.disc-row .disc-name { flex: 1; word-break: break-all; }
+.disc-count { color: var(--accent); font-weight: 600; white-space: nowrap; }
+.disc-row a { white-space: nowrap; }
+.no-disc {
+  color: var(--ink-2);
+  font-size: 13px;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+}
+.ghlink { font-size: 13px; text-align: right; margin: 12px 0 0; }
+#giscus-home { min-height: 80px; }
+
 /* ===== 页脚 ===== */
 footer {
   border-top: 1px solid var(--line);

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noarchive">
   <title>技术扫描报告库</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=2">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
 </head>
 <body>
@@ -33,16 +33,26 @@
       <div class="big">📭</div>
       <p>没有找到匹配的报告</p>
     </div>
+
+    <section class="feedback">
+      <h2>💬 反馈与点评</h2>
+      <p class="hint">对站点整体的建议直接在下方留言；每份报告的点评请进入该报告页面底部留言。两个渠道的留言都保存在 GitHub Discussions，站长会逐一回复。</p>
+      <h3 class="disc-title">📖 各报告反馈一览（点击查看对应讨论）</h3>
+      <div id="disc-index" class="disc-index"></div>
+      <h3 class="disc-title">✍️ 站点总体反馈</h3>
+      <div id="giscus-home"></div>
+      <p class="ghlink"><a id="gh-disc-link" href="#" target="_blank" rel="noopener">在 GitHub 查看全部讨论 →</a></p>
+    </section>
   </main>
 
   <footer class="wrap">
     <p id="foot-text">
-      报告仅供在线浏览 · 点评与反馈请进入报告页面留言<br>
+      报告仅供在线浏览 · 支持在报告页与首页两处反馈<br>
       Powered by GitHub Pages
     </p>
   </footer>
 
   <script src="assets/config.js?v=2"></script>
-  <script src="assets/app.js"></script>
+  <script src="assets/app.js?v=2"></script>
 </body>
 </html>
