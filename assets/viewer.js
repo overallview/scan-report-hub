@@ -134,7 +134,7 @@ function renderImages() {
   const loading = $("#loading");
   if (loading) loading.remove();
 
-  const dir = "site_images/" + META.path.replace(/^reports\//, "").replace(/\.pdf$/i, "");
+  const dir = "site_images/" + META.path.replace(/^reports\//, "").replace(/\.[^.]*$/, "");  // 去掉任意扩展名（pdf/docx/...）
   for (let i = 1; i <= META.pages; i++) {
     const sheet = document.createElement("div");
     sheet.className = "sheet";
