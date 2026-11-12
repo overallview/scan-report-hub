@@ -67,26 +67,27 @@ function updateTitle() {
   $("#r-title").textContent = `${cat}${name}`;
 }
 
-/* ---------- 4. 页码指示器 + 自实现懒加载（内嵌浏览器原生 lazy 不可靠） ---------- */
-function observePages() {
-  const io = new IntersectionObserver(
-    (ents) => ents.forEach((en) => {
-      if (!en.isIntersecting) return;
-      const el = en.target;
-      if (el.dataset.page && en.intersectionRatio > 0.5) {
-        pageInd.textContent = `${el.dataset.page} / ${pagesBox.children.length}`;
-      }
-      const img = el.tagName === "IMG" ? el : el.querySelector("img[data-src]");
-      if (img && !img.src) {
-        img.src = img.dataset.src;      // 进入视口附近才真正加载
-        img.removeAttribute("data-src");
-        io.unobserve(img);
-      }
-    }),
-    { root: null, rootMargin: "600px 0px", threshold: [0, 0.5] }
-  );
-  pagesBox.querySelectorAll(".sheet").forEach((el) => io.observe(el));
-  pagesBox.querySelectorAll("img[data-src]").forEach((el) => io.observe(el));
+/* ---------- 4. 页码指示器（滚动事件驱动，不依赖 IntersectionObserver） ---------- */
+function setupScrollIndicator() {
+  let ticking = false;
+  function update() {
+    ticking = false;
+    const sheets = pagesBox.children;
+    if (!sheets.length) return;
+    const mid = window.innerHeight / 2;
+    let current = 1;
+    for (let i = 0; i < sheets.length; i++) {
+      const r = sheets[i].getBoundingClientRect();
+      if (r.top <= mid && r.bottom >= mid) { current = i + 1; break; }
+      if (r.top > mid) { current = Math.max(1, i); break; }
+      current = i + 1;
+    }
+    pageInd.textContent = `${current} / ${sheets.length}`;
+  }
+  window.addEventListener("scroll", () => {
+    if (!ticking) { ticking = true; setTimeout(update, 120); }
+  }, { passive: true });
+  update();
 }
 
 function setZoom(v) {
@@ -113,14 +114,14 @@ function renderImages() {
     sheet.className = "sheet";
     sheet.dataset.page = i;
     const img = document.createElement("img");
-    img.dataset.src = `${encodeURI(dir)}/page-${i}.png`;   // 由 IntersectionObserver 懒加载
+    img.src = `${encodeURI(dir)}/page-${i}.png`;   // 直接加载（兼容性优先）
     img.draggable = false;
     img.alt = `第 ${i} 页`;
     img.onerror = () => { sheet.innerHTML = `<div class="img-err">⚠️ 第 ${i} 页图片缺失</div>`; };
     sheet.append(img, makeWatermark(viewer.clientWidth));
     pagesBox.append(sheet);
   }
-  observePages();
+  setupScrollIndicator();
 }
 
 /* ---------- 6. 模式二：PDF.js 回退（仅转换失败的报告会走到这里） ---------- */
@@ -159,7 +160,7 @@ function layoutPdf() {
       holder.innerHTML = `<div class="img-err">⚠️ 第 ${i} 页渲染失败：${e.message || e}</div>`;
     });
   }
-  observePages();
+  setupScrollIndicator();
 }
 
 function renderWithPdfJs() {
