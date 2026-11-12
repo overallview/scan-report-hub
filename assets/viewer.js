@@ -38,7 +38,7 @@ function updateTitle() {
 
 /* ---------- 4. PDF.js 渲染 ---------- */
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.7.570/pdf.worker.min.js";
 
 const pagesBox = $("#pages");
 const viewer = $("#viewer");
@@ -67,7 +67,11 @@ async function renderPage(n, holder, vw, dpr) {
   canvas.height = Math.floor(viewport.height * dpr);
   canvas.style.width = "100%";
   holder.style.height = viewport.height + "px";
-  await page.render({ canvasContext: canvas.getContext("2d"), viewport, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+  await page.render((() => {
+    const opts = { canvasContext: canvas.getContext("2d"), viewport };
+    if (dpr !== 1) opts.transform = [dpr, 0, 0, dpr, 0, 0];
+    return opts;
+  })()).promise;
   holder.replaceChildren(canvas, makeWatermark(vw));
   rendered.set(n, holder);
 }
