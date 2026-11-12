@@ -111,8 +111,13 @@ pdfjsLib
     layout();
   })
   .catch((err) => {
-    $("#loading").innerHTML = `⚠️ 报告加载失败（${err.message || err}）<br><a href="index.html">返回首页</a>`;
-    $("#loading").id = "load-error";
+    let box = document.getElementById("loading") || document.getElementById("load-error");
+    if (!box) {
+      box = document.createElement("div");
+      viewer.append(box);
+    }
+    box.id = "load-error";
+    box.innerHTML = `⚠️ 报告加载失败（${err.message || err}）<br><a href="index.html">返回首页</a>`;
   });
 
 /* 缩放按钮：重排全部页面（懒渲染会自动补） */
