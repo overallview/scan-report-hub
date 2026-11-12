@@ -67,17 +67,26 @@ function updateTitle() {
   $("#r-title").textContent = `${cat}${name}`;
 }
 
-/* ---------- 4. 页码指示器（两种模式共用） ---------- */
+/* ---------- 4. 页码指示器 + 自实现懒加载（内嵌浏览器原生 lazy 不可靠） ---------- */
 function observePages() {
   const io = new IntersectionObserver(
     (ents) => ents.forEach((en) => {
-      if (en.isIntersecting && en.intersectionRatio > 0.5) {
-        pageInd.textContent = `${en.target.dataset.page} / ${pagesBox.children.length}`;
+      if (!en.isIntersecting) return;
+      const el = en.target;
+      if (el.dataset.page && en.intersectionRatio > 0.5) {
+        pageInd.textContent = `${el.dataset.page} / ${pagesBox.children.length}`;
+      }
+      const img = el.tagName === "IMG" ? el : el.querySelector("img[data-src]");
+      if (img && !img.src) {
+        img.src = img.dataset.src;      // 进入视口附近才真正加载
+        img.removeAttribute("data-src");
+        io.unobserve(img);
       }
     }),
-    { threshold: [0, 0.5] }
+    { root: null, rootMargin: "600px 0px", threshold: [0, 0.5] }
   );
   pagesBox.querySelectorAll(".sheet").forEach((el) => io.observe(el));
+  pagesBox.querySelectorAll("img[data-src]").forEach((el) => io.observe(el));
 }
 
 function setZoom(v) {
@@ -104,8 +113,7 @@ function renderImages() {
     sheet.className = "sheet";
     sheet.dataset.page = i;
     const img = document.createElement("img");
-    img.src = `${encodeURI(dir)}/page-${i}.png`;
-    img.loading = "lazy";
+    img.dataset.src = `${encodeURI(dir)}/page-${i}.png`;   // 由 IntersectionObserver 懒加载
     img.draggable = false;
     img.alt = `第 ${i} 页`;
     img.onerror = () => { sheet.innerHTML = `<div class="img-err">⚠️ 第 ${i} 页图片缺失</div>`; };
