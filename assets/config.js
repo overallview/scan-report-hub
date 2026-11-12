@@ -11,7 +11,7 @@ const SITE = {
 // repoId / categoryId 由部署脚本自动填入，请勿手改
 const GISCUS = {
   repo: "overallview/scan-report-hub",
-  repoId: "__REPO_ID__",
+  repoId: "R_kgDOVrXu3A",
   category: "Announcements",
-  categoryId: "__CATEGORY_ID__",
+  categoryId: "DIC_kwDOVrXu3M4DK7tc",
 };
