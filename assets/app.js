@@ -41,6 +41,7 @@ async function init() {
     $("#grid").innerHTML = `<div class="empty"><div class="big">⚠️</div><p>reports.json 加载失败，请确认已通过 GitHub Actions 部署</p></div>`;
   }
 
+  fetchLiveViews();
   $("#search").addEventListener("input", (ev) => {
     keyword = ev.target.value.trim().toLowerCase();
     applyFilter();
@@ -67,6 +68,30 @@ function countSiteVisit() {
       el.querySelector("b").textContent = d.value.toLocaleString();
     })
     .catch(() => { /* 计数服务不可用就静默隐藏 */ });
+}
+
+/* ===== 每份报告的实时阅读人次（从计数服务读取，没人看过显示 0） ===== */
+const LIVE_VIEWS = {};   // path -> 次数
+function viewsOf(r) {
+  if (LIVE_VIEWS[r.path] != null) return LIVE_VIEWS[r.path];
+  return r.views != null ? r.views : null;   // 计数服务不可用时退回构建快照
+}
+function fetchLiveViews() {
+  const jobs = ALL.map((r) =>
+    fetch(`${ABACUS}/get/${COUNTER.namespace}/${repKey(r.path)}`)
+      .then((res) => res.json())
+      .then((d) => ({ path: r.path, v: typeof d.value === "number" ? d.value : 0 }))
+      .catch(() => ({ path: r.path, v: null }))
+  );
+  Promise.all(jobs).then((results) => {
+    let changed = false;
+    for (const res of results) {
+      if (res.v == null) continue;    // 计数服务整体不可用 → 保持快照/隐藏
+      LIVE_VIEWS[res.path] = res.v;
+      if (res.v > 0) changed = true;
+    }
+    if (changed) applyFilter();       // 重新渲染列表，带上 👁 数字
+  });
 }
 
 /* ===== 首页反馈区：各报告反馈一览 + 总体反馈评论 ===== */
@@ -117,7 +142,7 @@ function mountGiscusHome() {
 function renderStats(data) {
   const cats = (data.categories || []).length;
   const latest = ALL.reduce((m, r) => (r.date && r.date > m ? r.date : m), "") || "";
-  $("#stats").innerHTML = `
+  $("#stats-main").innerHTML = `
     <span class="stat"><b>${ALL.length}</b>份报告</span>
     <span class="stat"><b>${cats}</b>个分类</span>
     ${latest ? `<span class="stat">最近更新 <b>${fmtDate(latest)}</b></span>` : ""}
@@ -191,7 +216,7 @@ function renderGrid(list) {
             <span class="rep-meta">
               <span>📅 ${fmtDate(r.date)}</span>
               ${r.size != null ? `<span>📦 ${fmtSize(r.size)}</span>` : ""}
-              ${r.views != null ? `<span title="截至上次构建的阅读人次">👁 ${r.views}</span>` : ""}
+              ${viewsOf(r) != null ? `<span title="阅读人次">👁 ${viewsOf(r)}</span>` : ""}
             </span>
             <a class="rep-go" href="report.html?f=${encodeURIComponent(r.path)}">阅读 →</a>
           </li>`
