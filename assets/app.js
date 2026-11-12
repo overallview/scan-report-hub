@@ -155,7 +155,7 @@ function orderedCategories() {
   const pinned = DISPLAY.categoryOrder.filter((c) => present.includes(c));
   const rest = present
     .filter((c) => !DISPLAY.categoryOrder.includes(c))
-    .sort((a, b) => a.localeCompare(b, "zh"));
+    .sort();   // 默认按编码排序（与后端一致），精确顺序请在 categoryOrder 里指定
   return [...pinned, ...rest];
 }
 
